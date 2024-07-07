@@ -1,6 +1,6 @@
-# ERD: FoodieSocial
+# ERD: Foodie Gram
 
-This document explores the design of FoodieSocial, a social experience for sharing and discovering food recipes.
+This document explores the design of Foodie Gram, a social experience for sharing and discovering food recipes.
 
 We'll use a basic client/server architecture, where a single server is deployed on a cloud provider next to a relational database, and serving HTTP traffic from a public endpoint.
 
@@ -28,6 +28,7 @@ Recipes:
 |--------|------|
 | ID | STRING/UUID |
 | Title | STRING |
+| Image | Blob |
 | Ingredients | TEXT |
 | Instructions | TEXT |
 | UserId | STRING/UUID |
@@ -83,21 +84,27 @@ Recipes:
 - /recipes/list [GET]
 - /recipes/new  [POST]
 - /recipes/:id  [GET]
+- /recipes/:id  [PUT]
 - /recipes/:id  [DELETE]
 
 Favorites:
 - /favorites/new [POST]
+- /favorites/:id [DELETE]
 
 Likes:
 - /likes/new [POST]
+- /likes/:recipeId [DELETE]
 
 Dislikes:
 - /dislikes/new [POST]
+- /dislikes/:recipeId [DELETE]
 
 Comments:
 - /comments/new  [POST]
 - /comments/list [GET]
+- /comments/:id  [PUT]
 - /comments/:id  [DELETE]
+
 
 ## Clients
 
@@ -107,14 +114,3 @@ The web client will be hosted using any free web hosting platform such as Fireba
 
 The mobile app will be available on the Google Play Store and the Apple App Store.
 
-## Hosting
-
-The code will be hosted on GitHub, with pull requests and issues welcome.
-
-The web client will be hosted using any free web hosting platform such as Firebase or Netlify. A domain will be purchased for the site and configured to point to the web host's server public IP.
-
-The server will be deployed to a (likely shared) VPS for flexibility. The VM will have HTTP/HTTPS ports open, and we'll start with a manual deployment, to be automated later using GitHub Actions or similar. The server will have a closed CORS policy except for the domain name and the web host server.
-
----
-
-This document outlines the essential components and setup for FoodieSocial, providing a clear roadmap for the backend and frontend development of the project.
