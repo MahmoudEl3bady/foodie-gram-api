@@ -1,6 +1,7 @@
 import express from 'express';
 import { addLike,deleteLike,likeCounts,isLiked } from '../controllers/likesController.js';
 import { adddisLike,deletedisLike,dislikeCounts,isdisLiked } from '../controllers/dislikesController.js';
+import { addfav,deletefav,favCounts,isfav } from '../controllers/favsController.js';
 
 
 
@@ -58,6 +59,37 @@ router.get('/dislike',dislikeCounts);
 
 //checking if user disliked post 
 router.get('/dislike/isdisliked',isdisLiked);
+
+
+
+
+
+//////////////////favs////////////
+
+//adding fav
+
+router.post('/fav/add', addfav);
+
+
+//removing fav
+
+router.delete('/fav/delete',deletefav);
+
+
+//get fav count for post
+
+router.get('/fav',favCounts);
+
+
+
+//checking if user fav post 
+router.get('/fav/isfav',isfav);
+
+
+
+
+
+
 
 
 export default router;

@@ -1,5 +1,4 @@
-
-const likes =[
+const favs =[
     {
         uid:1,
         rid:1
@@ -27,38 +26,38 @@ const likes =[
 ];
 
 
-//handling likes requests
+
+//handling favs requests
 
 
-export const addLike = (req, res, next) => {
+export const addfav = (req, res, next) => {
     const {uid,rid} = req.body;
   
-    const like = {
+    const fav = {
         uid:uid,
         rid:rid
     };
 
     // Check for missing values
-    for (const [key, val] of Object.entries(like)){
+    for (const [key, val] of Object.entries(fav)){
         if(!val){
          const err = new Error(`pls include value of ${key}`);
          return next(err);
         }
      }
     // Add like to the likes array
-    likes.push(like);
+   favs.push(fav);
 
     // Count the number of likes for the specific rid
-    const likeCounts = likes.filter(recipe => recipe.rid ===like.rid );
+    const favCounts = favs.filter(recipe => recipe.rid ===fav.rid );
 
-    res.status(200).json({ likes: likeCounts.length });
+    res.status(200).json({ favs: favCounts.length });
 };
 
 
 
 
-
-export const deleteLike = (req,res,next)=>{
+export const deletefav = (req,res,next)=>{
     const{uid,rid}=req.body;
     
     //checking missing values
@@ -69,33 +68,32 @@ export const deleteLike = (req,res,next)=>{
         }
     }
     //checking if like exsists
-    const like = likes.find((like)=>like.uid==uid && like.rid==rid);
-    if(!like){
+    const fav = favs.find((fav)=>fav.uid==uid && fav.rid==rid);
+    if(!fav){
         return next();
     }
-    likes.splice(likes.indexOf(like),1);
+    favs.splice(favs.indexOf(fav),1);
     // Count the number of likes for the specific rid
-    const likeCounts = likes.filter(recipe => recipe.rid ===like.rid );
+    const favCounts = favs.filter(recipe => recipe.rid ===like.rid );
 
-    res.status(200).json({ likes: likeCounts.length });
+    res.status(200).json({ favs: favCounts.length });
 
 };
 
 
 
 
-
-export const likeCounts = (req,res,next)=>{
+export const favCounts = (req,res,next)=>{
     const id = parseInt(req.body.id);
     // Count the number of likes for the specific rid
-    const likeCounts = likes.filter(recipe => recipe.rid ===id );
+    const favCounts = favs.filter(recipe => recipe.rid ===id );
 
     //checking if id exsits
-    if(!likeCounts){
+    if(!favCounts){
         return next();
     }
 
-    res.status(200).json({ likes: likeCounts.length });
+    res.status(200).json({ favs: favCounts.length });
    
 };
 
@@ -104,8 +102,7 @@ export const likeCounts = (req,res,next)=>{
 
 
 
-
-export const isLiked = (req,res,next)=>{
+export const isfav = (req,res,next)=>{
     const {uid,rid}=req.body;
 
      //checking missing values
@@ -118,10 +115,10 @@ export const isLiked = (req,res,next)=>{
 
     
      //checking if like exsists
-     const like = likes.find((like)=>like.uid==uid && like.rid==rid);
+     const fav = favs.find((fav)=>fav.uid==uid && fav.rid==rid);
      
-     if(!like){
+     if(!fav){
        return next();
      }
-     res.status(200).json({isLiked:'true'});
+     res.status(200).json({isfav:'true'});
 };
