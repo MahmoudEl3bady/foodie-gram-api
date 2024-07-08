@@ -31,94 +31,97 @@ const dislikes =[
 //handling dislikes requests
 
 
-export const adddisLike = (req, res, next) => {
-    const {uid,rid} = req.body;
-  
-    const dislike = {
-        uid:uid,
-        rid:rid
-    };
+export const addDislike = (req, res, next) => {
+  const { uid, rid } = req.body;
 
-    // Check for missing values
-    for (const [key, val] of Object.entries(dislike)){
-        if(!val){
-         const err = new Error(`pls include value of ${key}`);
-         return next(err);
-        }
-     }
-    // Add dislike to the dislikes array
-    dislikes.push(dislike);
+  const dislike = {
+    uid: uid,
+    rid: rid,
+  };
 
-    // Count the number of dislikes for the specific rid
-    const dislikeCounts = dislikeslikes.filter(recipe => recipe.rid ===like.rid );
+  // Check for missing values
+  for (const [key, val] of Object.entries(dislike)) {
+    if (!val) {
+      const err = new Error(`pls include value of ${key}`);
+      return next(err);
+    }
+  }
+  // Add dislike to the dislikes array
+  dislikes.push(dislike);
 
-    res.status(200).json({ dislikes: dislikeCounts.length });
+  // Count the number of dislikes for the specific rid
+  const dislikeCounts = dislikeslikes.filter(
+    (recipe) => recipe.rid === like.rid
+  );
+
+  res.status(200).json({ dislikes: dislikeCounts.length });
 };
 
 
 
 
-export const deletedisLike = (req,res,next)=>{
-    const{uid,rid}=req.body;
-    
-    //checking missing values
-    for (const [key, val] of Object.entries(req.body)){
-        if(!val){
-         const err = new Error(`pls include value of ${key}`);
-         return next(err);
-        }
-    }
-    //checking if like exsists
-    const dislike = dislikeslikes.find((dlike)=>dlike.uid==uid && dlike.rid==rid);
-    if(!dislike){
-        return next();
-    }
-    dislikes.splice(dislikes.indexOf(like),1);
-    // Count the number of likes for the specific rid
-    const dislikeCounts = dislikes.filter(recipe => recipe.rid === dislike.rid );
+export const deleteDislike = (req, res, next) => {
+  const { uid, rid } = req.body;
 
-    res.status(200).json({ dislikes: dislikeCounts.length });
+  //checking missing values
+  for (const [key, val] of Object.entries(req.body)) {
+    if (!val) {
+      const err = new Error(`pls include value of ${key}`);
+      return next(err);
+    }
+  }
+  //checking if like exsists
+  const dislike = dislikeslikes.find(
+    (dlike) => dlike.uid == uid && dlike.rid == rid
+  );
+  if (!dislike) {
+    return next();
+  }
+  dislikes.splice(dislikes.indexOf(like), 1);
+  // Count the number of likes for the specific rid
+  const dislikeCounts = dislikes.filter((recipe) => recipe.rid === dislike.rid);
 
+  res.status(200).json({ dislikes: dislikeCounts.length });
 };
 
 
 
 
-export const dislikeCounts = (req,res,next)=>{
-    const id = parseInt(req.body.id);
-    // Count the number of likes for the specific rid
-    const dislikeCounts = dislikes.filter(recipe => recipe.rid ===id );
+export const dislikeCounts = (req, res, next) => {
+  const id = parseInt(req.body.id);
+  // Count the number of likes for the specific rid
+  const dislikeCounts = dislikes.filter((recipe) => recipe.rid === id);
 
-    //checking if id exsits
-    if(!dislikeCounts){
-        return next();
-    }
+  //checking if id exsits
+  if (!dislikeCounts) {
+    return next();
+  }
 
-    res.status(200).json({ dislikes: dislikeCounts.length });
-   
+  res.status(200).json({ dislikes: dislikeCounts.length });
 };
 
 
 
 
 
-export const isdisLiked = (req,res,next)=>{
-    const {uid,rid}=req.body;
+export const isDisliked = (req, res, next) => {
+  const { uid, rid } = req.body;
 
-     //checking missing values
-     for (const [key, val] of Object.entries(req.body)){
-        if(!val){
-         const err = new Error(`pls include value of ${key}`);
-         return next(err);
-        }
+  //checking missing values
+  for (const [key, val] of Object.entries(req.body)) {
+    if (!val) {
+      const err = new Error(`pls include value of ${key}`);
+      return next(err);
     }
+  }
 
-    
-     //checking if like exsists
-     const dislike = dislikes.find((dlike)=>dlike.uid==uid && dlike.rid==rid);
-  
-     if(!dislike){
-       return next();
-     }
-     res.status(200).json({isdisLiked:'true'});
+  //checking if like exsists
+  const dislike = dislikes.find(
+    (dlike) => dlike.uid == uid && dlike.rid == rid
+  );
+
+  if (!dislike) {
+    return next();
+  }
+  res.status(200).json({ isdisLiked: "true" });
 };
