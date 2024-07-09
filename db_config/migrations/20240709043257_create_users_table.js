@@ -1,18 +1,15 @@
-// migrations/<timestamp>_create_recipes_table.js
-export const up = function(knex) {
-    return knex.raw(`
-      CREATE TABLE Users (
-    ID TEXT PRIMARY KEY, 
-    FirstName TEXT,
-    LastName TEXT,
-    Password TEXT,
-    Email TEXT UNIQUE, 
-    Username TEXT UNIQUE
-  );
-    `);
-  };
-  
-  export const down = function(knex) {
-    return knex.raw('DROP TABLE Users;');
-  };
-  
+// migrations/<timestamp>_create_users_table.js
+exports.up = function (knex) {
+  return knex.schema.createTable("Users", function (table) {
+    table.string("ID").primary();
+    table.string("FirstName");
+    table.string("LastName");
+    table.string("Password");
+    table.string("Email").unique();
+    table.string("Username").unique();
+  });
+};
+
+exports.down = function (knex) {
+  return knex.schema.dropTable("Users");
+};

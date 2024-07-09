@@ -1,20 +1,15 @@
-// migrations/<timestamp>_create_recipes_table.js
-export const up = function(knex) {
-    return knex.raw(`
-      CREATE TABLE Recipes (
-  ID TEXT PRIMARY KEY, 
-  Title TEXT,
-  Ingredients TEXT,
-  Instructions TEXT,
-  Image TEXT,
-  UserId TEXT, 
-  PostedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (UserId) REFERENCES Users(ID)
-);
-    `);
-  };
-  
-  export const down = function(knex) {
-    return knex.raw('DROP TABLE Recipes;');
-  };
-  
+exports.up = function (knex) {
+  return knex.schema.createTable("recipes", function (table) {
+    table.increments("id").primary();
+    table.string("title");
+    table.text("image");
+    table.text("ingredients");
+    table.text("instructions");
+    table.integer("user_id").references("id").inTable("users");
+    table.timestamp("posted_at").defaultTo(knex.fn.now());
+  });
+};
+
+exports.down = function (knex) {
+  return knex.schema.dropTable("recipes");
+};
