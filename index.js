@@ -7,7 +7,7 @@ import favoritesRouter from "./routers/favoritesRouter.js";
 import logger from "./middleware/loggerMiddleware.js";
 import unfound from "./middleware/unfound.js";
 import errorHandler from "./middleware/error_handler.js";
-
+import db from './db/db.js'
 const app = express();
 
 // Helper Middlewares 
@@ -24,12 +24,22 @@ app.use("/recipes/:recipeId/favorites", favoritesRouter);
 
 // }
 
-app.use(unfound);
+// app.use(unfound);
 
 app.use(errorHandler);
 
 app.get("/", (req, res) => {
-  res.send("Hello World");
+  res.json({msg:"Hello World"});
+});
+
+app.get("/u", async (req, res) => {
+  try {
+    const data = await db.select("*").from("users");
+    res.json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 app.listen(8000, () => {
