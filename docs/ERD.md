@@ -28,7 +28,7 @@ Recipes:
 |--------|------|
 | ID | STRING/UUID |
 | Title | STRING |
-| Image | Blob |
+| Image | TEXT |
 | Ingredients | TEXT |
 | Instructions | TEXT |
 | UserId | STRING/UUID |
