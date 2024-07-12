@@ -17,10 +17,10 @@ app.use(logger);
 
 //{ Routers Middleware (For Nesting the Routes)
 app.use("/recipes", recipesRouter);
-app.use("/recipes/:recipeId/comments", commentsRouter);
-app.use("/recipes/:recipeId/likes", likesRouter);
-app.use("/recipes/:recipeId/dislikes", dislikesRouter);
-app.use("/recipes/:recipeId/favorites", favoritesRouter);
+app.use("/recipes/:recipe_id/comments", commentsRouter);
+app.use("/recipes/:recipe_id/likes", likesRouter);
+app.use("/recipes/:recipe_id/dislikes", dislikesRouter);
+app.use("/favorites", favoritesRouter);
 
 // }
 

@@ -17,6 +17,10 @@ router.post("/", addRecipe);
 router.put("/:id", updateRecipe);
 router.delete("/:id", deleteRecipe);
 
+// TODO :Get current user recipes to be shown in his profile.
+
+
+
 export default router;
 
 

@@ -1,127 +1,50 @@
-const dislikes =[
-    {
-        uid:6,
-        rid:9
-    },
-    {
-        uid:7,
-        rid:8
-    },
-    {
-        uid:9,
-        rid:10
-    },
-    {
-        uid:13,
-        rid:15
-    },
-    {
-        uid:6,
-        rid:7
-    },
-    {
-        uid:9,
-        rid:8
-    },
-];
-
-
-
-
-//handling dislikes requests
-
-
-export const addDislike = (req, res, next) => {
-  const { uid, rid } = req.body;
-
-  const dislike = {
-    uid: uid,
-    rid: rid,
-  };
-
-  // Check for missing values
-  for (const [key, val] of Object.entries(dislike)) {
-    if (!val) {
-      const err = new Error(`pls include value of ${key}`);
-      return next(err);
-    }
+import db from "../db/db.js"
+export const addDislike = async (req, res, next) => {
+  const recipe_id = req.params.recipe_id;
+  const { user_id } = req.body;
+  if (!recipe_id || !user_id) {
+    return res.status(400).json({ msg: "User or recipe not found!" });
   }
-  // Add dislike to the dislikes array
-  dislikes.push(dislike);
-
-  // Count the number of dislikes for the specific rid
-  const dislikeCounts = dislikeslikes.filter(
-    (recipe) => recipe.rid === like.rid
-  );
-
-  res.status(200).json({ dislikes: dislikeCounts.length });
+  try {
+    await db.raw("INSERT INTO dislikes (user_id, recipe_id) VALUES (?, ?)", [
+      user_id,
+      recipe_id,
+    ]);
+    res.status(200).json({ msg: "Dislike added successfully!" });
+  } catch (error) {
+    next(error);
+  }
 };
 
 
-
-
-export const deleteDislike = (req, res, next) => {
-  const { uid, rid } = req.body;
-
-  //checking missing values
-  for (const [key, val] of Object.entries(req.body)) {
-    if (!val) {
-      const err = new Error(`pls include value of ${key}`);
-      return next(err);
-    }
+// Delete a dislike
+export const deleteDislike = async (req, res, next) => {
+  const recipe_id = req.params.recipe_id;
+  const { user_id } = req.body;
+  if (!recipe_id || !user_id) {
+    return res.status(400).json({ msg: "User or recipe not found!" });
   }
-  //checking if like exsists
-  const dislike = dislikeslikes.find(
-    (dlike) => dlike.uid == uid && dlike.rid == rid
-  );
-  if (!dislike) {
-    return next();
+  try {
+    await db.raw("DELETE FROM dislikes WHERE recipe_id = ? AND user_id = ?", [
+      recipe_id,
+      user_id,
+    ]);
+    res.status(200).json({ msg: "Dislike deleted successfully!" });
+  } catch (error) {
+    next(error);
   }
-  dislikes.splice(dislikes.indexOf(like), 1);
-  // Count the number of likes for the specific rid
-  const dislikeCounts = dislikes.filter((recipe) => recipe.rid === dislike.rid);
-
-  res.status(200).json({ dislikes: dislikeCounts.length });
 };
 
-
-
-
-export const dislikeCounts = (req, res, next) => {
-  const id = parseInt(req.body.id);
-  // Count the number of likes for the specific rid
-  const dislikeCounts = dislikes.filter((recipe) => recipe.rid === id);
-
-  //checking if id exsits
-  if (!dislikeCounts) {
-    return next();
+// Get dislike count for a recipe
+export const dislikeCounts = async (req, res, next) => {
+  const recipe_id = req.params.recipe_id;
+  try {
+    const dislikesCount = await db.raw(
+      "SELECT count(*) as dislikes FROM dislikes WHERE recipe_id = ?",
+      [recipe_id]
+    );
+    res.status(200).json(dislikesCount[0]);
+  } catch (error) {
+    next(error);
   }
-
-  res.status(200).json({ dislikes: dislikeCounts.length });
-};
-
-
-
-
-
-export const isDisliked = (req, res, next) => {
-  const { uid, rid } = req.body;
-
-  //checking missing values
-  for (const [key, val] of Object.entries(req.body)) {
-    if (!val) {
-      const err = new Error(`pls include value of ${key}`);
-      return next(err);
-    }
-  }
-
-  //checking if like exsists
-  const dislike = dislikes.find(
-    (dlike) => dlike.uid == uid && dlike.rid == rid
-  );
-
-  if (!dislike) {
-    return next();
-  }
-  res.status(200).json({ isdisLiked: "true" });
 };

@@ -1,97 +1,68 @@
-const comments = [
-  {
-    id: 1,
-    uId: 2,
-    recId: 2,
-    comment: "This comment",
-    postedAt: Date.now(),
-  },
-  {
-    id: 2,
-    uId: 3,
-    recId: 3,
-    comment: "This comment",
-    postedAt: Date.now(),
-  },
-  {
-    id: 3,
-    uId: 4,
-    recId: 4,
-    comment: "This comment",
-    postedAt: Date.now(),
-  },
-  {
-    id: 4,
-    uId: 5,
-    recId: 5,
-    comment: "This comment",
-    postedAt: Date.now(),
-  },
-  {
-    id: 5,
-    uId: 6,
-    recId: 6,
-    comment: "This comment",
-    postedAt: Date.now(),
-  },
-  {
-    id: 99,
-    uId: 2,
-    recId: 2,
-    comment: "New Comment to Rec number 2 ",
-    postedAt: Date.now(),
-  },
-];
-
-// ==============List Recipe Comments==============
-
-export const getRecipeComments = (req, res) => {
-  const { recipeId } = req.params;
-
-  if (!recipeId) {
-    return res.status(400).json({ msg: "please provide recipe id" });
+import db from "../db/db.js";
+// ==============List Recipe Comments with Error Handling==============
+export const getRecipeComments = async (req, res) => {
+  try {
+    const { recipe_id } = req.params;
+    const recipe = await db.raw("SELECT * FROM recipes WHERE id = ?", [recipe_id]);
+    if (!recipe) {
+      console.log(recipe)
+     throw new Error("Recipe Not found")
+    }
+    const comments = await db.raw("SELECT * FROM comments WHERE recipe_id = ?", [recipe_id]);
+    if (!comments) {
+      return res.status(404).json({ msg: "No comments found for this recipe" });
+    }
+    res.status(200).json(comments);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error:"server Error " });
   }
-  const commentsForRecipe = comments.filter(
-    (comment) => comment.recId === parseInt(recipeId)
-  );
-  res.status(200).json({ comments: commentsForRecipe });
 };
 
-// ==============Add Recipe Comment==============
-
-export const addRecipeComment = (req, res) => {
-  const { comment } = req.body;
-  const { recipeId } = req.params;
-  const newComment = {
-    id: comments.length + 1,
-    recId: recipeId,
-    comment: comment,
-    postedAt: Date.now(),
-  };
-  comments.push(newComment);
-  res.status(201).json({ msg: "comment added successfully!" });
-};
-
-// ==============Update Recipe Comment==============
-
-export const updateRecipeComment = (req, res) => {
-  const { comment } = req.body;
-  const { id } = req.params;
-  const commentToUpdate = comments.find((com) => com.id === parseInt(id));
-  if (!commentToUpdate) {
-    return res.status(404).json({ msg: "Comment not found" });
+// ==============Add Recipe Comment with Error Handling==============
+export const addRecipeComment = async (req, res) => {
+  try {
+    const { recipe_id } = req.params;
+    const user_id = 1;
+    const { comment } = req.body;
+    const recipe = await db.raw("SELECT * FROM recipes WHERE id = ?", [recipe_id]);
+    if (!recipe) {
+      return res.status(404).json({ msg: "Recipe not found" });
+    }
+    if (!comment) {
+      return res.status(400).json({ msg: "Comment field is required" });
+    }
+    await db.raw("INSERT INTO comments (user_id,recipe_id,comment) VALUES (?,?,?)", [user_id, recipe_id, comment]);
+    res.status(201).json({ msg: "Comment added successfully" });
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ error: "Server error" });
   }
-  commentToUpdate.comment = comment;
-  res.status(200).json({ msg: "Comment updated successfully!" });
 };
 
-// ==============DELETE Recipe Comment==============
-export const deleteRecipeComment = (req, res) => {
-  const { id } = req.params;
-  const index = comments.findIndex((com) => com.id === parseInt(id));
-  if (index ===-1) {
-    return res.status(404).json({ msg: "comment not found" });
+// ==============Update Recipe Comment with Error Handling==============
+export const updateRecipeComment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { comment } = req.body;
+    if (!comment) {
+      return res.status(400).json({ msg: "Comment field is required" });
+    }
+    await db.raw("UPDATE comments SET comment = ? WHERE id = ?", [comment, id]);
+    res.status(200).json({ msg: "Comment updated successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
   }
-  comments.splice(index, 1);
-  res.status(200).json({ msg: "comment deleted successfully!" });
 };
+
+// ==============DELETE Recipe Comment with Error Handling==============
+export const deleteRecipeComment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.raw("DELETE FROM comments WHERE id = ?", [id]);
+    res.status(200).json({ msg: "Comment deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+};
+

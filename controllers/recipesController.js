@@ -1,116 +1,86 @@
-const recipes = [
-  {
-    id: 1,
-    title: "Spicy Arrabiata Penne",
-    ingredients:
-      "Penne pasta, olive oil, garlic, salt, pepper, garlic powder, onion, pepper, chicken, artichokes, feta cheese, oregano, black pepper",
-    instructions:
-      "Boil pasta, add olive oil, garlic, salt, pepper, garlic powder, onion, pepper, chicken, artichokes, feta cheese, oregano, black pepper",
-  },
-  {
-    id: 2,
-    title: "Spicy Arrabiata Penne",
-    ingredients:
-      "Penne pasta, olive oil, garlic, salt, pepper, garlic powder, onion, pepper, chicken, artichokes, feta cheese, oregano, black pepper",
-    instructions:
-      "Boil pasta, add olive oil, garlic, salt, pepper, garlic powder, onion, pepper, chicken, artichokes, feta cheese, oregano, black pepper",
-  },
-  {
-    id: 3,
-    title: "Spicy Arrabiata Penne",
-    ingredients:
-      "Penne pasta, olive oil, garlic, salt, pepper, garlic powder, onion, pepper, chicken, artichokes, feta cheese, oregano, black pepper",
-    instructions:
-      "Boil pasta, add olive oil, garlic, salt, pepper, garlic powder, onion, pepper, chicken, artichokes, feta cheese, oregano, black pepper",
-  },
-  {
-    id: 4,
-    title: "Spicy Arrabiata Penne",
-    ingredients:
-      "Penne pasta, olive oil, garlic, salt, pepper, garlic powder, onion, pepper, chicken, artichokes, feta cheese, oregano, black pepper",
-    instructions:
-      "Boil pasta, add olive oil, garlic, salt, pepper, garlic powder, onion, pepper, chicken, artichokes, feta cheese, oregano, black pepper",
-  },
-  {
-    id: 5,
-    title: "Spicy Arrabiata Penne",
-    ingredients:
-      "Penne pasta, olive oil, garlic, salt, pepper, garlic powder, onion, pepper, chicken, artichokes, feta cheese, oregano, black pepper",
-    instructions:
-      "Boil pasta, add olive oil, garlic, salt, pepper, garlic powder, onion, pepper, chicken, artichokes, feta cheese, oregano, black pepper",
-  },
-];
-
-export const getRecipes = (req, res) => {
-  const limit = parseInt(req.query.limit);
-  if (!isNaN(limit) && limit > 0){
-     return res.status(200).json(recipes.slice(0,limit));
-  }
-  res.status(200).json(recipes); 
+import db from "../db/db.js";
+export const getRecipes = async (req, res) => {
+  const recipes = await db.raw("SELECT * FROM recipes");
+  res.status(200).json(recipes);
 };
 
-export const getOneRecipe = (req, res,next) => {
-  const  id  = parseInt(req.params.id);
-  const recipe = recipes.find((rec) => rec.id === id);
-  if (!recipe) {
-    const err = new Error (` the recipe with id ${id} doesn't exsit`);
-    err.status=404;
-    return next(err);
-  }
+export const getOneRecipe = async (req, res, next) => {
+  const id = req.params.id;
+  const recipe = await db.raw("SELECT * FROM recipes WHERE id = ?", [id]);
   res.status(200).send(recipe);
 };
 
-export const addRecipe = (req, res,next) => {
-  console.log(req.body);
-  const {  title, ingredients, instructions } = req.body;
-  const newRecipe = {
-    id: recipes.length+1,
-    title: title,
-    ingredients: ingredients,
-    instructions: instructions,
-  };
-  
-
-  for (const [key, val] of Object.entries(newRecipe)) {
-    if (!val) {
-      const err = new Error(`Please include a value for ${key}`);
-      err.status = 400;
-      return next(err);
-    }
+export const addRecipe = async (req, res, next) => {
+  const { user_id, title, ingredients, instructions } = req.body;
+  if (!title || !ingredients || !instructions) {
+    return res.status(400).json({ msg: "All fields are required" });
   }
-  recipes.push(newRecipe);
+  //  await db("recipes").insert({user_id, title, ingredients, instructions });
+  await db.raw(
+    `INSERT INTO recipes (user_id,title,ingredients,instructions) VALUES (?,?,?,?)`,
+    [user_id, title, ingredients, instructions]
+  );
   res.status(201).json({ msg: "recipe added successfully!" });
 };
 
-export const updateRecipe = (req, res,next) => {
+export const updateRecipe = async (req, res, next) => {
+  const id = req.params.id;
   const { title, ingredients, instructions } = req.body;
-  const  id = req.params.id;
-  const recipe = recipes.find((rec) => rec.id === parseInt(id));
-  if (!recipe) {
-    return next();
-  }
+
+  // Check if at least one field is provided
   if (!title && !ingredients && !instructions) {
-    const err = new Error("Please provide at least one field to update.");
-    err.status = 400;
-    return next(err);
+    return res.status(400).json({
+      error:
+        "Please provide at least one field to update (title, ingredients, instructions)",
+    });
   }
 
- 
-  if (title) recipe.title = title;
-  if (ingredients) recipe.ingredients = ingredients;
-  if (instructions) recipe.instructions = instructions;
+  // Prepare the update query dynamically based on provided fields
+  const updateFields = [];
+  const updateValues = [];
 
-  return res.status(200).json({ msg: "Recipe updated successfully!" });
-  
-  
+  if (title) {
+    updateFields.push("title = ?");
+    updateValues.push(title);
+  }
+  if (ingredients) {
+    updateFields.push("ingredients = ?");
+    updateValues.push(ingredients);
+  }
+  if (instructions) {
+    updateFields.push("instructions = ?");
+    updateValues.push(instructions);
+  }
+
+  updateValues.push(id);
+  console.log(updateValues);
+  const updateQuery = `UPDATE recipes SET ${updateFields.join(
+    ", "
+  )} WHERE id = ?`;
+
+  try {
+    await db.raw(updateQuery, updateValues);
+
+    res.status(200).send({ msg: "Recipe updated successfully!" });
+  } catch (err) {
+    next(err);
+  }
 };
 
-export const deleteRecipe = (req, res,next) => {
-  const { id } = req.params;
-  const recipe = recipes.find((rec) => rec.id === parseInt(id));
-  if (!recipe) {
-     return next();
+export const deleteRecipe = async (req, res) => {
+  const recipeId = req.params.id;
+
+  try {
+    const recipe = await db.raw("SELECT * FROM recipes WHERE id = ?", [
+      recipeId,
+    ]);
+    if (recipe.length === 0) {
+      return res.status(404).json({ message: "Recipe not found" });
+    }
+
+    await db.raw("DELETE FROM recipes WHERE id = ?", [recipeId]);
+    res.status(200).json({ message: "Recipe deleted successfully" });
+  } catch (error) {
+    next(error);
   }
-  recipes.splice(recipes.indexOf(recipe), 1);
-  res.status(200).send({ msg: "Recipe deleted successfully!" });
 };
