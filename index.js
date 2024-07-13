@@ -1,4 +1,5 @@
 import express from "express";
+import usersRouter from "./routers/userRouter.js";
 import recipesRouter from "./routers/recipeRouter.js";
 import commentsRouter from "./routers/commentsRouter.js";
 import likesRouter from "./routers/likesRouter.js";
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(logger);
 
 //{ Routers Middleware (For Nesting the Routes)
+app.use("/users",usersRouter);
 app.use("/recipes", recipesRouter);
 app.use("/recipes/:recipe_id/comments", commentsRouter);
 app.use("/recipes/:recipe_id/likes", likesRouter);
@@ -24,7 +26,7 @@ app.use("/favorites", favoritesRouter);
 
 // }
 
-// app.use(unfound);
+app.use(unfound);
 
 app.use(errorHandler);
 
