@@ -3,14 +3,19 @@ import {
   addLike,
   deleteLike,
   likeCounts,
-  isLiked,
+  
 } from "../controllers/likesController.js";
+import authToken from "../middleware/authToken.js";
 
 const router = express.Router({ mergeParams: true });
 
-router.post("/", addLike);
+router.use(authToken)
+
+//Root : recipes/:recipeId/likes
+
+router.post("/", addLike);  
 router.delete("/", deleteLike);
 router.get("/count", likeCounts);
-router.get("/:userId", isLiked);
+// router.get("/:userId", isLiked);
 
 export default router;

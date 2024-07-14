@@ -5,8 +5,11 @@ import {
   deleteRecipeComment,
   updateRecipeComment,
 } from "../controllers/recipeCommentsController.js";
+import authToken from "../middleware/authToken.js";
 
 const router = express.Router({ mergeParams: true });
+
+router.use(authToken);
 
 //  Root /recipes/:recipeId/comments
 router.get("/", getRecipeComments);
