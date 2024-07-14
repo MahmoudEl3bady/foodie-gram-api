@@ -4,8 +4,11 @@ import {
   deleteFavorite,
   getUserFavorites
 } from "../controllers/favsController.js";
+import authToken from "../middleware/authToken.js";
 
 const router = express.Router({ mergeParams: true });
+
+router.use(authToken);
 
 router.get("/",getUserFavorites);
 router.post("/", addFavorite);

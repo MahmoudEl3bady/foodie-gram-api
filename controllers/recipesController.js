@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { getCurrentUserByUsername } from "./usersControllers.js";
 export const getRecipes = async (req, res) => {
   const recipes = await db.raw("SELECT * FROM recipes");
   res.status(200).json(recipes);
@@ -11,15 +12,23 @@ export const getOneRecipe = async (req, res, next) => {
 };
 
 export const addRecipe = async (req, res, next) => {
-  const { user_id, title, ingredients, instructions } = req.body;
+  const user_name = req.user.usrName;
+  console.log(req.user.usrName); 
+  if(!user_name){
+    return res.status(400).json({ msg: "User not found!" });
+  }
+  // Get the Logged in user from the JWT Token
+  const currentUser = getCurrentUserByUsername(user_name); 
+  const user_id = currentUser.id;
+  const { title, ingredients, instructions } = req.body;
   if (!title || !ingredients || !instructions) {
     return res.status(400).json({ msg: "All fields are required" });
   }
-  //  await db("recipes").insert({user_id, title, ingredients, instructions });
-  await db.raw(
-    `INSERT INTO recipes (user_id,title,ingredients,instructions) VALUES (?,?,?,?)`,
-    [user_id, title, ingredients, instructions]
-  );
+   await db("recipes").insert({user_id, title, ingredients, instructions });
+  // await db.raw(
+    // `INSERT INTO recipes (user_id,title,ingredients,instructions) VALUES (?,?,?,?)`,
+    // [user_id, title, ingredients, instructions]
+  // );
   res.status(201).json({ msg: "recipe added successfully!" });
 };
 

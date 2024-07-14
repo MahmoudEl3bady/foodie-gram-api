@@ -1,9 +1,15 @@
-import db from "../db/db.js"
+import db from "../db/db.js";
+import { getCurrentUserByUsername } from "./usersControllers.js";
 export const addDislike = async (req, res, next) => {
   const recipe_id = req.params.recipe_id;
-  const { user_id } = req.body;
-  if (!recipe_id || !user_id) {
-    return res.status(400).json({ msg: "User or recipe not found!" });
+  const user_name = req.user.usrName;
+  const currentUser = getCurrentUserByUsername(user_name);
+  const user_id = currentUser.id;
+  if (!recipe_id ) {
+    return res.status(400).json({ msg: "Recipe not found!" });
+  }
+  if (!user_id) {
+    return res.status(400).json({ msg: "User not found!" });
   }
   try {
     await db.raw("INSERT INTO dislikes (user_id, recipe_id) VALUES (?, ?)", [
@@ -16,11 +22,12 @@ export const addDislike = async (req, res, next) => {
   }
 };
 
-
 // Delete a dislike
 export const deleteDislike = async (req, res, next) => {
   const recipe_id = req.params.recipe_id;
-  const { user_id } = req.body;
+  const user_name = req.user.usrName;
+  const currentUser = getCurrentUserByUsername(user_name);
+  const user_id = currentUser.id;
   if (!recipe_id || !user_id) {
     return res.status(400).json({ msg: "User or recipe not found!" });
   }

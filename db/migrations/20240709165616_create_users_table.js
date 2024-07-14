@@ -1,6 +1,6 @@
 export const up = (knex) => {
   return knex.schema.createTable("users", (table) => {
-    table.increments("id").primary();
+    table.string("id").primary();
     table.string("first_name").notNullable();
     table.string("last_name").notNullable();
     table.string("password").notNullable();

@@ -1,5 +1,5 @@
 import express from "express";
-import usersRouter from "./routers/userRouter.js";
+import userRouter from "./routers/userRouter.js";
 import recipesRouter from "./routers/recipeRouter.js";
 import commentsRouter from "./routers/commentsRouter.js";
 import likesRouter from "./routers/likesRouter.js";
@@ -17,7 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(logger);
 
 //{ Routers Middleware (For Nesting the Routes)
-app.use("/users",usersRouter);
+app.use("/users",userRouter);
 app.use("/recipes", recipesRouter);
 app.use("/recipes/:recipe_id/comments", commentsRouter);
 app.use("/recipes/:recipe_id/likes", likesRouter);
@@ -26,7 +26,7 @@ app.use("/favorites", favoritesRouter);
 
 // }
 
-app.use(unfound);
+// app.use(unfound);
 
 app.use(errorHandler);
 
@@ -34,7 +34,7 @@ app.get("/", (req, res) => {
   res.json({msg:"Hello World"});
 });
 
-app.get("/u", async (req, res) => {
+app.get("/uuu", async (req, res) => {
   try {
     const data = await db.select("*").from("users");
     res.json(data);
@@ -43,7 +43,7 @@ app.get("/u", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
+console.log(process.env.PORT)
 app.listen(8000, () => {
   console.log("Server is Running");
 });

@@ -1,4 +1,5 @@
 import db from "../db/db.js";
+import { getCurrentUserByUsername } from "./usersControllers.js";
 // ==============List Recipe Comments with Error Handling==============
 export const getRecipeComments = async (req, res) => {
   try {
@@ -23,7 +24,7 @@ export const getRecipeComments = async (req, res) => {
 export const addRecipeComment = async (req, res) => {
   try {
     const { recipe_id } = req.params;
-    const user_id = 1;
+    const user_name = req.user.usrName;
     const { comment } = req.body;
     const recipe = await db.raw("SELECT * FROM recipes WHERE id = ?", [recipe_id]);
     if (!recipe) {
@@ -32,6 +33,8 @@ export const addRecipeComment = async (req, res) => {
     if (!comment) {
       return res.status(400).json({ msg: "Comment field is required" });
     }
+     const currentUser = getCurrentUserByUsername(user_name); 
+     const user_id = currentUser.id;
     await db.raw("INSERT INTO comments (user_id,recipe_id,comment) VALUES (?,?,?)", [user_id, recipe_id, comment]);
     res.status(201).json({ msg: "Comment added successfully" });
   } catch (error) {
