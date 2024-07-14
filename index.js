@@ -9,6 +9,11 @@ import logger from "./middleware/loggerMiddleware.js";
 import unfound from "./middleware/unfound.js";
 import errorHandler from "./middleware/error_handler.js";
 import db from './db/db.js'
+import {fileURLToPath} from 'url';
+import path from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
 // Helper Middlewares 
@@ -26,7 +31,7 @@ app.use("/recipes/:recipeId/favorites", favoritesRouter);
 
 // }
 
-app.use(unfound);
+// app.use(unfound);
 
 app.use(errorHandler);
 
@@ -34,6 +39,10 @@ app.get("/", (req, res) => {
   res.json({msg:"Hello World"});
 });
 
+app.get("/login",(req,res)=>{
+  
+  res.sendFile(path.join(__dirname,'login.html'));
+});
 app.get("/u", async (req, res) => {
   try {
     const data = await db.select("*").from("users");

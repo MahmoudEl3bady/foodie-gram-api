@@ -29,14 +29,13 @@ export const signIn = async (req,res,next)=>{
     try{
    const user = await db('users').where({ username: usrName }).first();
     if(!user){
-        return next(); 
+        return res.status(404).json({msg:unfound});
     }
    
         console.log(user);
     if (await bcrypt.compare(pass,user.password)){
-     const payLoad = {usrName:usrName};
-     const accessToken= genAccessToken(payLoad);
-     const refreshToken=genRefreshToken(payLoad);
+     const accessToken= genAccessToken({id : user.id});
+     const refreshToken=genRefreshToken({id : user.id});
      saveRefreshToken(refreshToken,user.id);
      return res.status(200).json({accessToken:accessToken, refreshToken:refreshToken});
 
@@ -70,8 +69,8 @@ export const token = async(req,res)=>{
   if(!dbToken || dbToken.revoked) return res.sendStatus(403);
     jwt.verify(token,process.env.REFRESH_TOKEN_SECERT,(err,payLoad)=>{
         if (err) return res.sendStatus(403);
-        const accessToken = genAccessToken({usrName:payLoad.usrName});
-        const refreshToken= genRefreshToken({usrName:payLoad.usrName});
+        const accessToken = genAccessToken({id:payLoad.id});
+        const refreshToken= genRefreshToken({id:payLoad.id});
         revokingRefreshToken(token);
         console.log(dbToken);
         saveRefreshToken(refreshToken,dbToken.user_id);
@@ -88,7 +87,7 @@ export const token = async(req,res)=>{
 
 export const getUser = async(req,res)=>{
     try {
-        const user =await db('users').where({ username: req.user.usrName }).first();
+        const user =await db('users').where({id: req.payLoad.id }).first();
         res.json(user);
     } catch (error) {
         res.json({msg:error.message});
