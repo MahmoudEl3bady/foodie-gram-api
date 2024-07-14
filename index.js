@@ -9,6 +9,11 @@ import logger from "./middleware/loggerMiddleware.js";
 import unfound from "./middleware/unfound.js";
 import errorHandler from "./middleware/error_handler.js";
 import db from './db/db.js'
+import {fileURLToPath} from 'url';
+import path from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
 // Helper Middlewares 
