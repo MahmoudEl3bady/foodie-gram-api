@@ -11,7 +11,6 @@ import {
 
 export const signup = async (req, res) => {
   const { fName, lName, pass, email, usrName } = req.body;
-  console.log(req.body);
   const id = uuidv4();
   try {
     await db("users").insert({
@@ -31,7 +30,8 @@ export const signIn = async (req, res, next) => {
   const { usrName, pass } = req.body;
   try {
     const user = await db("users").where({ username: usrName }).first();
-    if (!user) {
+    console.log(user);
+   if (!user) {
       return next();
     }
 

@@ -14,7 +14,7 @@ import path from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
+export const app = express();
 
 // Helper Middlewares 
 app.use(express.json());
@@ -49,6 +49,6 @@ app.get("/uuu", async (req, res) => {
   }
 });
 console.log(process.env.PORT)
-app.listen(8000, () => {
+export const server = app.listen(8000, () => {
   console.log("Server is Running");
 });

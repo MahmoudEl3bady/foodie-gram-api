@@ -2,6 +2,7 @@ import db from "../db/db.js";
 import { getCurrentUserByUsername } from "./usersControllers.js";
 export const getRecipes = async (req, res) => {
   const recipes = await db.raw("SELECT * FROM recipes");
+  console.log("currentUser",req?.payload?.usrName);
   res.status(200).json(recipes);
 };
 
@@ -12,24 +13,34 @@ export const getOneRecipe = async (req, res, next) => {
 };
 
 export const addRecipe = async (req, res, next) => {
-  const user_name = req.user.usrName;
-  console.log(req.user.usrName); 
-  if(!user_name){
+  const user_name = req.payload.usrName;
+  console.log(req.payload.usrName); 
+  if (!user_name) {
     return res.status(400).json({ msg: "User not found!" });
   }
+
   // Get the Logged in user from the JWT Token
-  const currentUser = getCurrentUserByUsername(user_name); 
+  const currentUser = await getCurrentUserByUsername(user_name); 
   const user_id = currentUser.id;
   const { title, ingredients, instructions } = req.body;
+  
   if (!title || !ingredients || !instructions) {
     return res.status(400).json({ msg: "All fields are required" });
   }
-   await db("recipes").insert({user_id, title, ingredients, instructions });
-  // await db.raw(
-    // `INSERT INTO recipes (user_id,title,ingredients,instructions) VALUES (?,?,?,?)`,
-    // [user_id, title, ingredients, instructions]
-  // );
-  res.status(201).json({ msg: "recipe added successfully!" });
+
+  // Insert the recipe and return the ID
+  const [recipeId] = await db("recipes").insert(
+    { user_id, title, ingredients, instructions },
+    ['id'] // Returning the ID of the inserted recipe
+  );
+
+  // Prepare the response
+  const response = { msg: "Recipe added successfully!" };
+  if (recipeId) {
+    response.recipe =recipeId;
+  }
+
+  res.status(201).json(response);
 };
 
 export const updateRecipe = async (req, res, next) => {
@@ -84,11 +95,11 @@ export const deleteRecipe = async (req, res) => {
       recipeId,
     ]);
     if (recipe.length === 0) {
-      return res.status(404).json({ message: "Recipe not found" });
+      return res.status(404).json({ msg: "Recipe not found" });
     }
 
     await db.raw("DELETE FROM recipes WHERE id = ?", [recipeId]);
-    res.status(200).json({ message: "Recipe deleted successfully" });
+    res.status(200).json({ msg: "Recipe deleted successfully!" });
   } catch (error) {
     next(error);
   }
