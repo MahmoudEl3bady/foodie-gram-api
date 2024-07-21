@@ -6,7 +6,6 @@ export const getRecipeComments = async (req, res) => {
     const { recipe_id } = req.params;
     const recipe = await db.raw("SELECT * FROM recipes WHERE id = ?", [recipe_id]);
     if (!recipe) {
-      console.log(recipe)
      throw new Error("Recipe Not found")
     }
     const comments = await db.raw("SELECT * FROM comments WHERE recipe_id = ?", [recipe_id]);
@@ -24,7 +23,7 @@ export const getRecipeComments = async (req, res) => {
 export const addRecipeComment = async (req, res) => {
   try {
     const { recipe_id } = req.params;
-    const user_name = req.user.usrName;
+    const user_name = req.payload.usrName;
     const { comment } = req.body;
     const recipe = await db.raw("SELECT * FROM recipes WHERE id = ?", [recipe_id]);
     if (!recipe) {
@@ -33,10 +32,13 @@ export const addRecipeComment = async (req, res) => {
     if (!comment) {
       return res.status(400).json({ msg: "Comment field is required" });
     }
-     const currentUser = getCurrentUserByUsername(user_name); 
+     const currentUser = await getCurrentUserByUsername(user_name); 
      const user_id = currentUser.id;
-    await db.raw("INSERT INTO comments (user_id,recipe_id,comment) VALUES (?,?,?)", [user_id, recipe_id, comment]);
-    res.status(201).json({ msg: "Comment added successfully" });
+  
+     await db.raw("INSERT INTO comments (user_id,recipe_id,comment) VALUES (?,?,?)", [user_id, recipe_id, comment]);
+    const response = { msg: "Comment added successfully!" };
+
+    res.status(201).json(response);
   } catch (error) {
     console.log(error)
     res.status(500).json({ error: "Server error" });

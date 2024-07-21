@@ -27,7 +27,7 @@ app.use("/recipes", recipesRouter);
 app.use("/recipes/:recipe_id/comments", commentsRouter);
 app.use("/recipes/:recipe_id/likes", likesRouter);
 app.use("/recipes/:recipe_id/dislikes", dislikesRouter);
-app.use("/favorites", favoritesRouter);
+app.use("/f", favoritesRouter);
 
 // }
 

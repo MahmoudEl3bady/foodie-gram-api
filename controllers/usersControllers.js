@@ -30,12 +30,10 @@ export const signIn = async (req, res, next) => {
   const { usrName, pass } = req.body;
   try {
     const user = await db("users").where({ username: usrName }).first();
-    console.log(user);
    if (!user) {
       return next();
     }
 
-    console.log(user);
     if (await bcrypt.compare(pass, user.password)) {
       const payLoad = { usrName: usrName };
       const accessToken = genAccessToken(payLoad);
@@ -86,7 +84,6 @@ export const getUser = async (req, res) => {
       .where({ username: req.user.usrName })
       .first();
     res.json(user);
-    console.log(user);
   } catch (error) {
     res.json({ msg: error.message });
   }

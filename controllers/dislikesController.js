@@ -2,8 +2,8 @@ import db from "../db/db.js";
 import { getCurrentUserByUsername } from "./usersControllers.js";
 export const addDislike = async (req, res, next) => {
   const recipe_id = req.params.recipe_id;
-  const user_name = req.user.usrName;
-  const currentUser = getCurrentUserByUsername(user_name);
+  const user_name = req.payload.usrName;
+  const currentUser = await getCurrentUserByUsername(user_name);
   const user_id = currentUser.id;
   if (!recipe_id ) {
     return res.status(400).json({ msg: "Recipe not found!" });
@@ -25,8 +25,8 @@ export const addDislike = async (req, res, next) => {
 // Delete a dislike
 export const deleteDislike = async (req, res, next) => {
   const recipe_id = req.params.recipe_id;
-  const user_name = req.user.usrName;
-  const currentUser = getCurrentUserByUsername(user_name);
+  const user_name = req.payload.usrName;
+  const currentUser = await getCurrentUserByUsername(user_name);
   const user_id = currentUser.id;
   if (!recipe_id || !user_id) {
     return res.status(400).json({ msg: "User or recipe not found!" });
