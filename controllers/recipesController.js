@@ -1,10 +1,35 @@
 import db from "../db/db.js";
 import { getCurrentUserByUsername } from "./usersControllers.js";
 export const getRecipes = async (req, res) => {
-  const recipes = await db.raw("SELECT * FROM recipes");
-  console.log("currentUser",req?.payload?.usrName);
-  res.status(200).json(recipes);
+  const { page = 1, limit = 10 } = req.query;
+  const pageNumber = Number(page);
+  const pageLimit = Number(limit);
+  const offset = (pageNumber - 1) * pageLimit;
+
+  try {
+    const recipes = await db.raw("SELECT * FROM recipes LIMIT ? OFFSET ?", [
+      pageLimit,
+      offset,
+    ]);
+
+    const totalRecipes = await db.raw("SELECT count(*) as total FROM recipes");
+
+    const totalPages = Math.ceil(totalRecipes[0].total / pageLimit);
+
+    res.status(200).json({
+      data: recipes,
+      meta: {
+        totalPages,
+        currentPage: pageNumber,
+        itemPerPage: pageLimit,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: "Internal server error" });
+  }
 };
+
 
 export const getOneRecipe = async (req, res, next) => {
   const id = req.params.id;
@@ -14,16 +39,16 @@ export const getOneRecipe = async (req, res, next) => {
 
 export const addRecipe = async (req, res, next) => {
   const user_name = req.payload.usrName;
-  console.log(req.payload.usrName); 
+  console.log(req.payload.usrName);
   if (!user_name) {
     return res.status(400).json({ msg: "User not found!" });
   }
 
   // Get the Logged in user from the JWT Token
-  const currentUser = await getCurrentUserByUsername(user_name); 
+  const currentUser = await getCurrentUserByUsername(user_name);
   const user_id = currentUser.id;
   const { title, ingredients, instructions } = req.body;
-  
+
   if (!title || !ingredients || !instructions) {
     return res.status(400).json({ msg: "All fields are required" });
   }
@@ -31,13 +56,13 @@ export const addRecipe = async (req, res, next) => {
   // Insert the recipe and return the ID
   const [recipeId] = await db("recipes").insert(
     { user_id, title, ingredients, instructions },
-    ['id'] // Returning the ID of the inserted recipe
+    ["id"] // Returning the ID of the inserted recipe
   );
 
   // Prepare the response
   const response = { msg: "Recipe added successfully!" };
   if (recipeId) {
-    response.recipe =recipeId;
+    response.recipe = recipeId;
   }
 
   res.status(201).json(response);
