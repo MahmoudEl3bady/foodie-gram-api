@@ -6,11 +6,11 @@ import likesRouter from "./routers/likesRouter.js";
 import dislikesRouter from "./routers/dislikesRouter.js";
 import favoritesRouter from "./routers/favoritesRouter.js";
 import logger from "./middleware/loggerMiddleware.js";
-import unfound from "./middleware/unfound.js";
 import errorHandler from "./middleware/error_handler.js";
-import db from './db/db.js'
 import {fileURLToPath} from 'url';
 import path from 'path';
+import cors from 'cors';
+import notFoundMiddleware from "./middleware/notFound.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -20,6 +20,8 @@ export const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(logger);
+app.use(cors());
+
 
 //{ Routers Middleware (For Nesting the Routes)
 app.use("/users",userRouter);
@@ -30,25 +32,17 @@ app.use("/recipes/:recipe_id/dislikes", dislikesRouter);
 app.use("/f", favoritesRouter);
 
 // }
-
-// app.use(unfound);
-
 app.use(errorHandler);
 
-app.get("/", (req, res) => {
+//Testing Server 
+app.get("/healthz", (req, res) => {
   res.json({msg:"Hello World"});
 });
 
-app.get("/uuu", async (req, res) => {
-  try {
-    const data = await db.select("*").from("users");
-    res.json(data);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-console.log(process.env.PORT)
-export const server = app.listen(8000, () => {
-  console.log("Server is Running");
+
+// Checking for the wrong routes
+app.all('*',notFoundMiddleware);
+
+export const server = app.listen(process.env.PORT, () => {
+  console.log("Server is Running on Port:",process.env.PORT);
 });

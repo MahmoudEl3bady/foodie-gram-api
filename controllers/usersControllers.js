@@ -8,8 +8,13 @@ import {
   isValidRefreshToken,
   saveRefreshToken,
 } from "../utility/refreshToken.js";
+import {validationResult } from "express-validator";
 
 export const signup = async (req, res) => {
+   const errors = validationResult(req);
+   if (!errors.isEmpty()) {
+     return res.status(400).json({ errors: errors.array() });
+   }
   const { fName, lName, pass, email, usrName } = req.body;
   const id = uuidv4();
   try {
@@ -27,6 +32,10 @@ export const signup = async (req, res) => {
 };
 
 export const signIn = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array()});
+  }
   const { usrName, pass } = req.body;
   try {
     const user = await db("users").where({ username: usrName }).first();
@@ -43,7 +52,7 @@ export const signIn = async (req, res, next) => {
         .status(200)
         .json({ accessToken: accessToken, refreshToken: refreshToken });
     }
-    return res.status(400).json({ msg: "invalid credantials" });
+    return res.status(400).json({ msg: "Invalid credentials" });
   } catch (err) {
     res.status(400).json({ msg: err.message });
   }
