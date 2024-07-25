@@ -1,5 +1,8 @@
+import {customError} from "../utility/customError.js";
+
 const notFoundMiddleware = (req, res, next) => {
-  res.json({ msg: `The endpoint ${req.originalUrl} is not found!` });
+  const err = new customError(`The route ${req.originalUrl} was not found!`, 404);
+  next(err); 
 };
 
 export default notFoundMiddleware;

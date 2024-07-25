@@ -13,7 +13,7 @@ describe("Integration Tests", function () {
     await request(app).post("/users/signup").send({
       fName: "test",
       lName: "user",
-      pass: "test",
+      pass: "Test@user1",
       email: "test@example.com",
       usrName: "testUser",
     });
@@ -21,7 +21,7 @@ describe("Integration Tests", function () {
     // SignIn the test user and get the token
     const response = await request(app).post("/users/signin").send({
       usrName: "testUser",
-      pass: "test",
+      pass: "Test@user1",
     });
 
     token = response.body.accessToken;

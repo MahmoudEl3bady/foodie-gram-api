@@ -6,7 +6,7 @@ import likesRouter from "./routers/likesRouter.js";
 import dislikesRouter from "./routers/dislikesRouter.js";
 import favoritesRouter from "./routers/favoritesRouter.js";
 import logger from "./middleware/loggerMiddleware.js";
-import errorHandler from "./middleware/error_handler.js";
+import errorHandler from "./middleware/errorHandler.js";
 import {fileURLToPath} from 'url';
 import path from 'path';
 import cors from 'cors';
@@ -32,9 +32,8 @@ app.use("/recipes/:recipe_id/dislikes", dislikesRouter);
 app.use("/f", favoritesRouter);
 
 // }
-app.use(errorHandler);
 
-//Testing Server 
+//Server testing endpoint 
 app.get("/healthz", (req, res) => {
   res.json({msg:"Hello World"});
 });
@@ -42,6 +41,7 @@ app.get("/healthz", (req, res) => {
 
 // Checking for the wrong routes
 app.all('*',notFoundMiddleware);
+app.use(errorHandler);
 
 export const server = app.listen(process.env.PORT, () => {
   console.log("Server is Running on Port:",process.env.PORT);

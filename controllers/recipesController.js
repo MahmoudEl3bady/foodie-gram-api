@@ -1,6 +1,7 @@
 import db from "../db/db.js";
+import { customError } from "../utility/customError.js";
 import { getCurrentUserByUsername } from "./usersControllers.js";
-export const getRecipes = async (req, res) => {
+export const getRecipes = async (req, res, next) => {
   const { page = 1, limit = 10 } = req.query;
   const pageNumber = Number(page);
   const pageLimit = Number(limit);
@@ -15,7 +16,9 @@ export const getRecipes = async (req, res) => {
     const totalRecipes = await db.raw("SELECT count(*) as total FROM recipes");
 
     const totalPages = Math.ceil(totalRecipes[0].total / pageLimit);
-
+    if(pageNumber>totalPages){
+      throw new customError("Page not found!",404);
+    }
     res.status(200).json({
       data: recipes,
       meta: {
@@ -25,26 +28,28 @@ export const getRecipes = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ msg: "Internal server error" });
+    next(error);
   }
 };
 
-
 export const getOneRecipe = async (req, res, next) => {
   const id = req.params.id;
-  const recipe = await db.raw("SELECT * FROM recipes WHERE id = ?", [id]);
-  res.status(200).send(recipe);
+  try {
+    const recipe = await db.raw("SELECT * FROM recipes WHERE id = ?", [id]);
+    if (recipe.length === 0) {
+      throw new customError("Recipe Not found", 404);
+    }
+    res.status(200).send(recipe);
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const addRecipe = async (req, res, next) => {
   const user_name = req.payload.usrName;
-  console.log(req.payload.usrName);
   if (!user_name) {
     return res.status(400).json({ msg: "User not found!" });
   }
-
-  // Get the Logged in user from the JWT Token
   const currentUser = await getCurrentUserByUsername(user_name);
   const user_id = currentUser.id;
   const { title, ingredients, instructions } = req.body;
@@ -53,13 +58,11 @@ export const addRecipe = async (req, res, next) => {
     return res.status(400).json({ msg: "All fields are required" });
   }
 
-  // Insert the recipe and return the ID
   const [recipeId] = await db("recipes").insert(
     { user_id, title, ingredients, instructions },
     ["id"] // Returning the ID of the inserted recipe
   );
 
-  // Prepare the response
   const response = { msg: "Recipe added successfully!" };
   if (recipeId) {
     response.recipe = recipeId;
@@ -69,7 +72,7 @@ export const addRecipe = async (req, res, next) => {
 };
 
 export const updateRecipe = async (req, res, next) => {
-  const id = req.params.id;
+  const recipeId = req.params.id;
   const { title, ingredients, instructions } = req.body;
 
   // Check if at least one field is provided
@@ -97,7 +100,7 @@ export const updateRecipe = async (req, res, next) => {
     updateValues.push(instructions);
   }
 
-  updateValues.push(id);
+  updateValues.push(recipeId);
   console.log(updateValues);
   const updateQuery = `UPDATE recipes SET ${updateFields.join(
     ", "
@@ -105,14 +108,20 @@ export const updateRecipe = async (req, res, next) => {
 
   try {
     await db.raw(updateQuery, updateValues);
+    const recipe = await db.raw("SELECT * FROM recipes WHERE id = ?", [
+      recipeId,
+    ]);
 
+    if (recipe.length === 0) {
+      throw new customError("Recipe Not found!", 404);
+    }
     res.status(200).send({ msg: "Recipe updated successfully!" });
   } catch (err) {
     next(err);
   }
 };
 
-export const deleteRecipe = async (req, res) => {
+export const deleteRecipe = async (req, res, next) => {
   const recipeId = req.params.id;
 
   try {
@@ -120,7 +129,7 @@ export const deleteRecipe = async (req, res) => {
       recipeId,
     ]);
     if (recipe.length === 0) {
-      return res.status(404).json({ msg: "Recipe not found" });
+      throw new customError("Recipe not found!", 404);
     }
 
     await db.raw("DELETE FROM recipes WHERE id = ?", [recipeId]);

@@ -1,13 +1,15 @@
 import db from "../db/db.js";
+import { customError } from "../utility/customError.js";
 import { getCurrentUserByUsername } from "./usersControllers.js";
 
-export const getUserFavorites = async (req, res) => {
+export const getUserFavorites = async (req, res,next) => {
   try {
     const user_name = req.payload.usrName;
     const currentUser = await getCurrentUserByUsername(user_name);
+    if(!currentUser){
+      throw new customError("User Not found!",404);
+    }
     const user_id = currentUser.id;
-    console.log(currentUser)
-
       const favoritesQuery = `
       SELECT 
         r.id, r.title, r.ingredients, r.instructions, r.image, r.posted_at 
@@ -21,11 +23,9 @@ export const getUserFavorites = async (req, res) => {
         f.user_id = ?
     `;
     const favorites = await db.raw(favoritesQuery ,[user_id]);
-    console.log(favorites);
     res.status(200).json(favorites);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
+   next(error);
   }
 };
 
@@ -38,7 +38,7 @@ export const addFavorite = async (req, res, next) => {
       recipe_id,
     ]);
     if (recipe.length===0) {
-      return res.status(404).json({ msg: "Recipe not found" });
+     throw new customError('Recipe Not found!',404);
     }
 
     const currentUser = await getCurrentUserByUsername(user_name);
@@ -49,9 +49,7 @@ export const addFavorite = async (req, res, next) => {
       [user_id, recipe_id]
     );
     if (existingFav.length>0) {
-      console.log("ssms",existingFav)
-      // Adjusting to check the 'rows' property
-      return res.status(409).json({ msg: "Favorite already exists" });
+        throw new customError('Favorite already exists!',409);
     }
 
     await db.raw("INSERT INTO favorites (user_id, recipe_id) VALUES (?, ?)", [
@@ -77,7 +75,7 @@ export const deleteFavorite = async (req, res, next) => {
       [user_id, recipe_id]
     );
     if (existingFav.length === 0) {
-      return res.status(404).json({ msg: "Favorite not found" });
+        throw new customError('Favorite not found!',404);
     }
 
     await db.raw("DELETE FROM favorites WHERE user_id = ? AND recipe_id = ?", [
@@ -90,7 +88,7 @@ export const deleteFavorite = async (req, res, next) => {
   }
 };
 
-export const isFavorite = async (req, res) => {
+export const isFavorite = async (req, res,next) => {
   const user_name = req.payload.usrName;
   const { recipe_id } = req.params;
 
@@ -107,7 +105,6 @@ export const isFavorite = async (req, res) => {
     }
     res.status(200).json({ isFavorite: true });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
+    next(error);
   }
 };
