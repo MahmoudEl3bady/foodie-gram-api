@@ -2,7 +2,9 @@ import jwt from 'jsonwebtoken';
 
 
 export const genAccessToken = (payLoad)=>{
-    return  jwt.sign(payLoad,process.env.ACCESS_TOKEN_SECERT,{expiresIn:'1d'});
+    return jwt.sign(payLoad, process.env.ACCESS_TOKEN_SECERT, {
+      expiresIn: "1d",
+    });
 }
 
 

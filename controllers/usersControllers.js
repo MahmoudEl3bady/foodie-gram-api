@@ -8,12 +8,21 @@ import {
   isValidRefreshToken,
   saveRefreshToken,
 } from "../utility/refreshToken.js";
+import { validationResult } from "express-validator";
+import { customError } from "../utility/customError.js";
 
 export const signup = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array().map((a) => a.msg) });
+  }
   const { fName, lName, pass, email, usrName } = req.body;
-  console.log(req.body);
   const id = uuidv4();
+  const existingUser = db.raw('SELECT * FROM users WHERE username=? OR email=?',[usrName,email]);
   try {
+    if(existingUser){
+      throw new customError("Username or Email already exist!",401);
+    }
     await db("users").insert({
       first_name: fName,
       last_name: lName,
@@ -28,14 +37,17 @@ export const signup = async (req, res) => {
 };
 
 export const signIn = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array().map((a) => a.msg) });
+  }
   const { usrName, pass } = req.body;
   try {
     const user = await db("users").where({ username: usrName }).first();
     if (!user) {
-      return next();
+      throw new customError("Incorrect username or password", 404);
     }
 
-    console.log(user);
     if (await bcrypt.compare(pass, user.password)) {
       const payLoad = { usrName: usrName };
       const accessToken = genAccessToken(payLoad);
@@ -44,10 +56,11 @@ export const signIn = async (req, res, next) => {
       return res
         .status(200)
         .json({ accessToken: accessToken, refreshToken: refreshToken });
+    } else {
+      throw new customError("Incorrect username or password", 404);
     }
-    return res.status(400).json({ msg: "invalid credantials" });
   } catch (err) {
-    res.status(400).json({ msg: err.message });
+    next(err);
   }
 };
 
@@ -86,7 +99,6 @@ export const getUser = async (req, res) => {
       .where({ username: req.user.usrName })
       .first();
     res.json(user);
-    console.log(user);
   } catch (error) {
     res.json({ msg: error.message });
   }
@@ -99,5 +111,3 @@ export const getCurrentUserByUsername = async (username) => {
   console.log("currUser", currentUser);
   return currentUser[0];
 };
-
-

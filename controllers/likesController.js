@@ -5,39 +5,39 @@ import { getCurrentUserByUsername } from "./usersControllers.js";
 export const addLike = async (req, res, next) => {
   try {
     const recipe_id = req.params.recipe_id;
-    const user_name = req.user.usrName;
+    const user_name = req.payload.usrName;
     if (!recipe_id || !user_name) {
       return res.status(400).json({ msg: "User or recipe not found!" });
     }
-    const currentUser = getCurrentUserByUsername(user_name);
+    const currentUser = await  getCurrentUserByUsername(user_name);
     const user_id = currentUser.id;
     await db.raw("INSERT INTO likes (user_id,recipe_id) VALUES (?,?)", [
       user_id,
       recipe_id,
     ]);
-    res.status(200).json({ msg: "like added successfully!" });
+    res.status(200).json({ msg: "Like added successfully!" });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 };
 
 export const deleteLike = async (req, res, next) => {
- try {
-   const recipe_id = req.params.recipe_id;
-   const user_name = req.user.usrName;
-   if (!recipe_id) {
-     return res.status(400).json({ msg: "Recipe not found!" });
-   }
-   const currentUser = getCurrentUserByUsername(user_name);
-   const user_id = currentUser.id;
-   await db.raw("DELETE FROM likes WHERE recipe_id = ? AND user_id = ?", [
-     recipe_id,
-     user_id,
-   ]);
-   res.status(200).json({ msg: "like deleted successfully!" });
- } catch (error) {
-  return res.status(500).json({ msg: error });
- }
+  try {
+    const recipe_id = req.params.recipe_id;
+    const user_name = req.payload.usrName;
+    if (!recipe_id) {
+      return res.status(400).json({ msg: "Recipe not found!" });
+    }
+    const currentUser = await getCurrentUserByUsername(user_name);
+    const user_id = currentUser.id;
+    await db.raw("DELETE FROM likes WHERE recipe_id = ? AND user_id = ?", [
+      recipe_id,
+      user_id,
+    ]);
+    res.status(200).json({ msg: "Like deleted successfully!" });
+  } catch (error) {
+    return res.status(500).json({ msg: error });
+  }
 };
 
 export const likeCounts = async (req, res, next) => {
@@ -47,5 +47,5 @@ export const likeCounts = async (req, res, next) => {
     "SELECT count(*) as likes FROM likes WHERE recipe_id = ?",
     [recipe_id]
   );
-  res.status(200).json(likesCount);
+  res.status(200).json(likesCount[0]);
 };
