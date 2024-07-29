@@ -41,15 +41,26 @@ export const signIn = async (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array().map((a) => a.msg) });
   }
-  const { usrName, pass } = req.body;
+  const { usrName,email,pass } = req.body;
   try {
-    const user = await db("users").where({ username: usrName }).first();
+    console.log(usrName,email)
+    let user;
+    if(usrName){
+      user = await db("users").where({ username: usrName }).first();
+    }else{
+      user = await db("users").where({ email: email }).first();
+    }
     if (!user) {
       throw new customError("Incorrect username or password", 404);
     }
 
     if (await bcrypt.compare(pass, user.password)) {
-      const payLoad = { usrName: usrName };
+      let payLoad;
+      if(usrName){
+        payLoad = { usrName: usrName };
+      }else{
+         payLoad = { email: email };
+      }
       const accessToken = genAccessToken(payLoad);
       const refreshToken = genRefreshToken(payLoad);
       saveRefreshToken(refreshToken, user.id);
