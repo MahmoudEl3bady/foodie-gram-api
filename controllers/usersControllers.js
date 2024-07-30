@@ -2,12 +2,17 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import db from "../db/db.js";
-import { genAccessToken, genRefreshToken } from "../utility/tokenGen.js";
+import {
+  genAccessToken,
+  genRefreshToken,
+  genResetPasswordToken,
+} from "../utility/tokenGen.js";
 import {
   revokingRefreshToken,
   isValidRefreshToken,
   saveRefreshToken,
 } from "../utility/refreshToken.js";
+import { isValidResetPasswordToken } from "../utility/resetPasswordToken.js";
 import { validationResult } from "express-validator";
 import { customError } from "../utility/customError.js";
 
@@ -18,10 +23,10 @@ export const signup = async (req, res) => {
   }
   const { fName, lName, pass, email, usrName } = req.body;
   const id = uuidv4();
-  const existingUser = db.raw('SELECT * FROM users WHERE username=? OR email=?',[usrName,email]);
+  const existingUser = await db("users").where({ username: usrName, email: email }).first();
   try {
-    if(existingUser){
-      throw new customError("Username or Email already exist!",401);
+    if (existingUser) {
+      throw new customError("Username or Email already exist!", 401);
     }
     await db("users").insert({
       first_name: fName,
@@ -41,13 +46,13 @@ export const signIn = async (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array().map((a) => a.msg) });
   }
-  const { usrName,email,pass } = req.body;
+  const { usrName, email, pass } = req.body;
   try {
-    console.log(usrName,email)
+    console.log(usrName, email);
     let user;
-    if(usrName){
+    if (usrName) {
       user = await db("users").where({ username: usrName }).first();
-    }else{
+    } else {
       user = await db("users").where({ email: email }).first();
     }
     if (!user) {
@@ -56,10 +61,10 @@ export const signIn = async (req, res, next) => {
 
     if (await bcrypt.compare(pass, user.password)) {
       let payLoad;
-      if(usrName){
+      if (usrName) {
         payLoad = { usrName: usrName };
-      }else{
-         payLoad = { email: email };
+      } else {
+        payLoad = { email: email };
       }
       const accessToken = genAccessToken(payLoad);
       const refreshToken = genRefreshToken(payLoad);
@@ -121,4 +126,44 @@ export const getCurrentUserByUsername = async (username) => {
   ]);
   console.log("currUser", currentUser);
   return currentUser[0];
+};
+
+export const forgetPassword = async (req, res, next) => {
+  const { email } = req.body;
+  const user = await db("users").where({ email: email }).first();
+  console.log(user);
+  try {
+    if (!user) {
+      throw new customError("User not found!", 404);
+    }
+    const payLoad = { email: email };
+    const token = genResetPasswordToken(payLoad);
+    const URL = process.env.URL || "http://localhost:8000/";
+    const link = `${URL}users/resetPassword/${user.id}/${token}`;
+    console.log(link);
+    res.send({ msg: "Check your email for reset password link", link: link });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  const { id, token } = req.params;
+  const { password , confirmPassword } = req.body;
+  try {
+    const dbToken =  isValidResetPasswordToken(token);
+    console.log("dbToken" , dbToken);
+    const user = await db("users").where({ id: id }).first();
+    if (!user) {
+      throw new customError("User not found!", 404);
+    }
+    if (password !== confirmPassword) {
+      throw new customError("Password does not match", 400);
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await db("users").where({ id: id }).update({ password: hashedPassword });
+    return res.status(200).json({ msg: "Password reset successfully" });
+  } catch (err) {
+    next(err);
+  }
 };
