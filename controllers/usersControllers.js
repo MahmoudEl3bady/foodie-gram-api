@@ -113,11 +113,10 @@ export const token = async (req, res) => {
 };
 
 export const getUser = async (req, res) => {
-  const username = req.payLoad.usrName;
+  console.log("reqqqqqq=>> ", req.payload);
+  const username = req.payload.usrName;
   try {
-    const user = await db("users")
-      .where({ username: username })
-      .first();
+    const user = await db("users").where({ username: username }).first();
     res.json(user);
   } catch (error) {
     res.json({ msg: error.message });
@@ -156,32 +155,33 @@ If you didn’t request a password change, you can ignore this message and conti
     `;
     console.log(emailBody);
     console.log(user.email);
-    await sendEmail(user.email, "Reset Password",emailBody);
+    await sendEmail(user.email, "Reset Password", emailBody);
     res.send({
-      msg: "Check your email for reset password link"
+      msg: "Check your email for reset password link",
     });
   } catch (err) {
     next(err);
   }
 };
 
-export const getResetPassword = async(req,res,next)=>{
-    const {id,token}=req.params;
-    try{
+export const getResetPassword = async (req, res, next) => {
+  const { id, token } = req.params;
+  try {
     const resetPasswordToken = isValidResetPasswordToken(token);
-    if(!resetPasswordToken){
-        throw new customError("Invalid reset password token", 400);
+    if (!resetPasswordToken) {
+      throw new customError("Invalid reset password token", 400);
     }
-    const user = await db("users").where({id:id}).first();
-    if(!user){
-        throw new customError("User not found!", 404);
+    const user = await db("users").where({ id: id }).first();
+    if (!user) {
+      throw new customError("User not found!", 404);
     }
-     
+
     // If using a single-page application, redirect to the frontend reset password page
     // res.redirect(`${process.env.FRONTEND_URL}/reset-password?id=${id}&token=${token}` );
   } catch (err) {
     next(err);
-  }}
+  }
+};
 
 export const resetPassword = async (req, res, next) => {
   const { id, token } = req.params;
@@ -195,8 +195,8 @@ export const resetPassword = async (req, res, next) => {
     if (password !== confirmPassword) {
       throw new customError("Password does not match", 400);
     }
-    if(!resetPasswordToken){
-        throw new customError("Invalid reset password token", 400);
+    if (!resetPasswordToken) {
+      throw new customError("Invalid reset password token", 400);
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     await db("users").where({ id: id }).update({ password: hashedPassword });
@@ -205,4 +205,69 @@ export const resetPassword = async (req, res, next) => {
     next(err);
   }
 };
+export const updateUserProfile = async (req, res, next) => {
+  const { usrName } = req.payload;
+  const { firstName, lastName, email, userName } = req.body;
+  try {
+    const user = await getCurrentUserByUsername(usrName);
+    if (!user) {
+      throw new customError("User not found", 404);
+    }
+    if (email) {
+      const existingEmail = await db
+        .first("email")
+        .from("users")
+        .where("email", email);
 
+      if (existingEmail) {
+        throw new customError("Email already exists", 400);
+      }
+    }
+    if (userName) {
+      const existingUsername = await db
+        .first("username")
+        .from("users")
+        .where("username", userName);
+
+      if (existingUsername) {
+        throw new customError("Username already exists", 400);
+      }
+    }
+
+    const updateFields = {};
+    if (firstName) updateFields.first_name = firstName;
+    if (lastName) updateFields.last_name = lastName;
+    if (email) updateFields.email = email;
+    if (userName) updateFields.username = userName;
+
+    await db("users").where({ id: user.id }).update(updateFields);
+    res.status(200).json({ msg: "User profile updated successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateUserPassword = async (req, res, next) => {
+  const username = req.payload.usrName;
+  const { currentPassword, newPassword, confirmPassword } = req.body;
+
+  try {
+    const user = await getCurrentUserByUsername(username);
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    if (newPassword !== confirmPassword) {
+      throw new customError("Passwords do not match", 400);
+    }
+    if (!(await bcrypt.compare(currentPassword, user.password))) {
+      throw new customError("Incorrect password", 400);
+    }
+
+    await db("users")
+      .where({ id: user.id })
+      .update({ password: hashedNewPassword });
+
+    res.status(200).json({ msg: "Password updated successfully" });
+  } catch (error) {
+    next(error);
+  }
+};

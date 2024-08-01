@@ -15,7 +15,7 @@ router.use(authToken);
 
 router.get("/", getRecipes);
 router.get("/:id", getOneRecipe);
-router.post("/", addRecipe);
+router.post("/" ,addRecipe);
 router.patch("/:id", updateRecipe);
 router.delete("/:id", deleteRecipe);
 

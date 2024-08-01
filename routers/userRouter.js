@@ -1,4 +1,4 @@
-import express, { Router } from "express";
+import express from "express";
 import {
   signup,
   signIn,
@@ -7,7 +7,9 @@ import {
   signOut,
   forgetPassword,
   resetPassword,
-  getResetPassword
+  getResetPassword,
+  updateUserPassword,
+  updateUserProfile,
 } from "../controllers/usersControllers.js";
 import authToken from "../middleware/authToken.js";
 import passport from "../utility/passport.js";
@@ -17,6 +19,8 @@ const router = express.Router();
 router.get("/", authToken, getUser);
 router.post("/signup", validateSignup, signup);
 router.post("/signin", validateSignIn, signIn);
+router.patch("/updatePassword", authToken, updateUserPassword);
+router.patch("/updateProfile", authToken, updateUserProfile);
 router.post("/signout", signOut);
 router.post("/token", token);
 router.get(
@@ -32,10 +36,8 @@ router.get(
 );
 
 // Reset user's password
-router.post("/forgetPassword",forgetPassword);
-router.get("/resetPassword/:id/:token",getResetPassword);
-router.patch("/resetPassword/:id/:token",resetPassword);
-
-
+router.post("/forgetPassword", forgetPassword);
+router.get("/resetPassword/:id/:token", getResetPassword);
+router.patch("/resetPassword/:id/:token", resetPassword);
 
 export default router;
