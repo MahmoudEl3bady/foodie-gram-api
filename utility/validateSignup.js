@@ -18,7 +18,8 @@ export const validateSignup = [
 ];
 
 export const validateSignIn = [
-  body("usrName").trim().notEmpty().withMessage("Username is required"),
+  body("usrName").trim(),
+  body("email").normalizeEmail(),
   body("pass")
     .isLength({ min: 6 })
     .withMessage("Password must be at least 8 characters long")

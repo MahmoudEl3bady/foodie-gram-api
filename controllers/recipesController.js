@@ -47,6 +47,7 @@ export const getOneRecipe = async (req, res, next) => {
 
 export const addRecipe = async (req, res, next) => {
   const user_name = req.payload.usrName;
+  console.log(req.payload);
   if (!user_name) {
     return res.status(400).json({ msg: "User not found!" });
   }

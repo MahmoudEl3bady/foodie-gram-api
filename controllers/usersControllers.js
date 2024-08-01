@@ -2,14 +2,20 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import db from "../db/db.js";
-import { genAccessToken, genRefreshToken } from "../utility/tokenGen.js";
+import {
+  genAccessToken,
+  genRefreshToken,
+  genResetPasswordToken,
+} from "../utility/tokenGen.js";
 import {
   revokingRefreshToken,
   isValidRefreshToken,
   saveRefreshToken,
 } from "../utility/refreshToken.js";
+import { isValidResetPasswordToken } from "../utility/resetPasswordToken.js";
 import { validationResult } from "express-validator";
 import { customError } from "../utility/customError.js";
+import { sendEmail } from "../utility/sendEmail.js";
 
 export const signup = async (req, res) => {
   const errors = validationResult(req);
@@ -18,10 +24,12 @@ export const signup = async (req, res) => {
   }
   const { fName, lName, pass, email, usrName } = req.body;
   const id = uuidv4();
-  const existingUser = db.raw('SELECT * FROM users WHERE username=? OR email=?',[usrName,email]);
+  const existingUser = await db("users")
+    .where({ username: usrName, email: email })
+    .first();
   try {
-    if(existingUser){
-      throw new customError("Username or Email already exist!",401);
+    if (existingUser) {
+      throw new customError("Username or Email already exist!", 401);
     }
     await db("users").insert({
       first_name: fName,
@@ -41,15 +49,26 @@ export const signIn = async (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array().map((a) => a.msg) });
   }
-  const { usrName, pass } = req.body;
+  const { usrName, email, pass } = req.body;
   try {
-    const user = await db("users").where({ username: usrName }).first();
+    console.log(usrName, email);
+    let user;
+    if (usrName) {
+      user = await db("users").where({ username: usrName }).first();
+    } else {
+      user = await db("users").where({ email: email }).first();
+    }
     if (!user) {
       throw new customError("Incorrect username or password", 404);
     }
 
     if (await bcrypt.compare(pass, user.password)) {
-      const payLoad = { usrName: usrName };
+      let payLoad;
+      if (usrName) {
+        payLoad = { usrName: usrName };
+      } else {
+        payLoad = { email: email };
+      }
       const accessToken = genAccessToken(payLoad);
       const refreshToken = genRefreshToken(payLoad);
       saveRefreshToken(refreshToken, user.id);
@@ -94,10 +113,10 @@ export const token = async (req, res) => {
 };
 
 export const getUser = async (req, res) => {
+  console.log("reqqqqqq=>> ", req.payload);
+  const username = req.payload.usrName;
   try {
-    const user = await db("users")
-      .where({ username: req.user.usrName })
-      .first();
+    const user = await db("users").where({ username: username }).first();
     res.json(user);
   } catch (error) {
     res.json({ msg: error.message });
@@ -110,4 +129,145 @@ export const getCurrentUserByUsername = async (username) => {
   ]);
   console.log("currUser", currentUser);
   return currentUser[0];
+};
+
+export const forgetPassword = async (req, res, next) => {
+  const { email } = req.body;
+  const user = await db("users").where({ email: email }).first();
+  console.log(user);
+  try {
+    if (!user) {
+      throw new customError("User not found!", 404);
+    }
+    const payLoad = { email: email };
+    const token = genResetPasswordToken(payLoad);
+    const URL = process.env.URL || "http://localhost:8000/";
+    const restPasswordLink = `${URL}users/resetPassword/${user.id}/${token}`;
+
+    const emailBody = `<h2 style="text-align: center">Hey ${user.first_name} ${user.last_name}</h2>,
+<div style="text-align: center; font-size: 19px;">
+We received a request to change your password on Foodie Gram.
+
+Click <a href="${restPasswordLink}">Rest Password</a> to change your password. This link is valid for half an hour.
+
+If you didn’t request a password change, you can ignore this message and continue to use your current password.
+</div>
+    `;
+    console.log(emailBody);
+    console.log(user.email);
+    await sendEmail(user.email, "Reset Password", emailBody);
+    res.send({
+      msg: "Check your email for reset password link",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getResetPassword = async (req, res, next) => {
+  const { id, token } = req.params;
+  try {
+    const resetPasswordToken = isValidResetPasswordToken(token);
+    if (!resetPasswordToken) {
+      throw new customError("Invalid reset password token", 400);
+    }
+    const user = await db("users").where({ id: id }).first();
+    if (!user) {
+      throw new customError("User not found!", 404);
+    }
+
+    // If using a single-page application, redirect to the frontend reset password page
+    // res.redirect(`${process.env.FRONTEND_URL}/reset-password?id=${id}&token=${token}` );
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  const { id, token } = req.params;
+  const { password, confirmPassword } = req.body;
+  try {
+    const resetPasswordToken = isValidResetPasswordToken(token);
+    const user = await db("users").where({ id: id }).first();
+    if (!user) {
+      throw new customError("User not found!", 404);
+    }
+    if (password !== confirmPassword) {
+      throw new customError("Password does not match", 400);
+    }
+    if (!resetPasswordToken) {
+      throw new customError("Invalid reset password token", 400);
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await db("users").where({ id: id }).update({ password: hashedPassword });
+    return res.status(200).json({ msg: "Password reset successfully" });
+  } catch (err) {
+    next(err);
+  }
+};
+export const updateUserProfile = async (req, res, next) => {
+  const { usrName } = req.payload;
+  const { firstName, lastName, email, userName } = req.body;
+  try {
+    const user = await getCurrentUserByUsername(usrName);
+    if (!user) {
+      throw new customError("User not found", 404);
+    }
+    if (email) {
+      const existingEmail = await db
+        .first("email")
+        .from("users")
+        .where("email", email);
+
+      if (existingEmail) {
+        throw new customError("Email already exists", 400);
+      }
+    }
+    if (userName) {
+      const existingUsername = await db
+        .first("username")
+        .from("users")
+        .where("username", userName);
+
+      if (existingUsername) {
+        throw new customError("Username already exists", 400);
+      }
+    }
+
+    const updateFields = {};
+    if (firstName) updateFields.first_name = firstName;
+    if (lastName) updateFields.last_name = lastName;
+    if (email) updateFields.email = email;
+    if (userName) updateFields.username = userName;
+
+    await db("users").where({ id: user.id }).update(updateFields);
+    res.status(200).json({ msg: "User profile updated successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateUserPassword = async (req, res, next) => {
+  const username = req.payload.usrName;
+  const { currentPassword, newPassword, confirmPassword } = req.body;
+
+  try {
+    const user = await getCurrentUserByUsername(username);
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    if (newPassword !== confirmPassword) {
+      throw new customError("Passwords do not match", 400);
+    }
+    if (!(await bcrypt.compare(currentPassword, user.password))) {
+      throw new customError("Incorrect password", 400);
+    }
+
+    await db("users")
+      .where({ id: user.id })
+      .update({ password: hashedNewPassword });
+
+    res.status(200).json({ msg: "Password updated successfully" });
+  } catch (error) {
+    next(error);
+  }
 };
