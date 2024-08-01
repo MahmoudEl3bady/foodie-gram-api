@@ -6,13 +6,15 @@ import {
   token,
   signOut,
   forgetPassword,
-  resetPassword
+  resetPassword,
+  getResetPassword
 } from "../controllers/usersControllers.js";
 import authToken from "../middleware/authToken.js";
 import passport from "../utility/passport.js";
 import { validateSignIn, validateSignup } from "../utility/validateSignup.js";
 
 const router = express.Router();
+router.get("/", authToken, getUser);
 router.post("/signup", validateSignup, signup);
 router.post("/signin", validateSignIn, signIn);
 router.post("/signout", signOut);
@@ -29,7 +31,11 @@ router.get(
   }
 );
 
+// Reset user's password
 router.post("/forgetPassword",forgetPassword);
-router.post("/resetPassword/:id/:token",resetPassword);
-router.get("/", authToken, getUser);
+router.get("/resetPassword/:id/:token",getResetPassword);
+router.patch("/resetPassword/:id/:token",resetPassword);
+
+
+
 export default router;

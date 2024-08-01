@@ -16,7 +16,7 @@ router.use(authToken);
 router.get("/", getRecipes);
 router.get("/:id", getOneRecipe);
 router.post("/", addRecipe);
-router.put("/:id", updateRecipe);
+router.patch("/:id", updateRecipe);
 router.delete("/:id", deleteRecipe);
 
 // TODO :Get current user recipes to be shown in his profile.

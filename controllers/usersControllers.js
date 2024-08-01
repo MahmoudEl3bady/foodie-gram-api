@@ -15,6 +15,7 @@ import {
 import { isValidResetPasswordToken } from "../utility/resetPasswordToken.js";
 import { validationResult } from "express-validator";
 import { customError } from "../utility/customError.js";
+import { sendEmail } from "../utility/sendEmail.js";
 
 export const signup = async (req, res) => {
   const errors = validationResult(req);
@@ -23,7 +24,9 @@ export const signup = async (req, res) => {
   }
   const { fName, lName, pass, email, usrName } = req.body;
   const id = uuidv4();
-  const existingUser = await db("users").where({ username: usrName, email: email }).first();
+  const existingUser = await db("users")
+    .where({ username: usrName, email: email })
+    .first();
   try {
     if (existingUser) {
       throw new customError("Username or Email already exist!", 401);
@@ -110,9 +113,10 @@ export const token = async (req, res) => {
 };
 
 export const getUser = async (req, res) => {
+  const username = req.payLoad.usrName;
   try {
     const user = await db("users")
-      .where({ username: req.user.usrName })
+      .where({ username: username })
       .first();
     res.json(user);
   } catch (error) {
@@ -139,26 +143,60 @@ export const forgetPassword = async (req, res, next) => {
     const payLoad = { email: email };
     const token = genResetPasswordToken(payLoad);
     const URL = process.env.URL || "http://localhost:8000/";
-    const link = `${URL}users/resetPassword/${user.id}/${token}`;
-    console.log(link);
-    res.send({ msg: "Check your email for reset password link", link: link });
+    const restPasswordLink = `${URL}users/resetPassword/${user.id}/${token}`;
+
+    const emailBody = `<h2 style="text-align: center">Hey ${user.first_name} ${user.last_name}</h2>,
+<div style="text-align: center; font-size: 19px;">
+We received a request to change your password on Foodie Gram.
+
+Click <a href="${restPasswordLink}">Rest Password</a> to change your password. This link is valid for half an hour.
+
+If you didn’t request a password change, you can ignore this message and continue to use your current password.
+</div>
+    `;
+    console.log(emailBody);
+    console.log(user.email);
+    await sendEmail(user.email, "Reset Password",emailBody);
+    res.send({
+      msg: "Check your email for reset password link"
+    });
   } catch (err) {
     next(err);
   }
 };
 
+export const getResetPassword = async(req,res,next)=>{
+    const {id,token}=req.params;
+    try{
+    const resetPasswordToken = isValidResetPasswordToken(token);
+    if(!resetPasswordToken){
+        throw new customError("Invalid reset password token", 400);
+    }
+    const user = await db("users").where({id:id}).first();
+    if(!user){
+        throw new customError("User not found!", 404);
+    }
+     
+    // If using a single-page application, redirect to the frontend reset password page
+    // res.redirect(`${process.env.FRONTEND_URL}/reset-password?id=${id}&token=${token}` );
+  } catch (err) {
+    next(err);
+  }}
+
 export const resetPassword = async (req, res, next) => {
   const { id, token } = req.params;
-  const { password , confirmPassword } = req.body;
+  const { password, confirmPassword } = req.body;
   try {
-    const dbToken =  isValidResetPasswordToken(token);
-    console.log("dbToken" , dbToken);
+    const resetPasswordToken = isValidResetPasswordToken(token);
     const user = await db("users").where({ id: id }).first();
     if (!user) {
       throw new customError("User not found!", 404);
     }
     if (password !== confirmPassword) {
       throw new customError("Password does not match", 400);
+    }
+    if(!resetPasswordToken){
+        throw new customError("Invalid reset password token", 400);
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     await db("users").where({ id: id }).update({ password: hashedPassword });
@@ -167,3 +205,4 @@ export const resetPassword = async (req, res, next) => {
     next(err);
   }
 };
+
