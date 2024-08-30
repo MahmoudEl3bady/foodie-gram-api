@@ -9,6 +9,7 @@ Foodie Gram is a social network for sharing and discovering food recipes.
 - Like, dislike, and favorite recipes
 - Comment on recipes
 - User profiles
+- Testing using Mocha and supertest 
 
 ## Architecture
 
