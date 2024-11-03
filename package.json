@@ -8,7 +8,7 @@
   },
   "type": "module",
   "scripts": {
-    "start": "node --env-file=.env --watch index.js ",
+    "start": " node --watch index.js",
     "test": "mocha --require @babel/register tests/setupTests.js tests/**/*.test.js"
   },
   "keywords": [],

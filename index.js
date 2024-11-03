@@ -10,6 +10,8 @@ import errorHandler from "./middleware/errorHandler.js";
 import {fileURLToPath} from 'url';
 import path from 'path';
 import cors from 'cors';
+import dotenv from 'dotenv';
+dotenv.config();
 import notFoundMiddleware from "./middleware/notFound.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

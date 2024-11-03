@@ -3,6 +3,8 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { genAccessToken, genRefreshToken } from '../utility/tokenGen.js';
 import { revokingRefreshToken, isValidRefreshToken, saveRefreshToken } from '../utility/refreshToken.js';
 import db from '../db/db.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
 
 passport.use(new GoogleStrategy({
