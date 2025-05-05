@@ -1,13 +1,13 @@
 import jwt from "jsonwebtoken";
 
 export const genAccessToken = (payLoad) => {
-  return jwt.sign(payLoad, process.env.ACCESS_TOKEN_SECERT, {
+  return jwt.sign(payLoad, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn: "1d",
   });
 };
 
 export const genRefreshToken = (payLoad) => {
-  return jwt.sign(payLoad, process.env.REFRESH_TOKEN_SECERT, {
+  return jwt.sign(payLoad, process.env.REFRESH_TOKEN_SECRET, {
     expiresIn: "7d",
   });
 };

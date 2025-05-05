@@ -14,4 +14,17 @@ export default {
       directory: path.resolve("db/seeds"),
     },
   },
+  test: {
+    client: "sqlite3",
+    connection: {
+      filename: ":memory:",
+    },
+    useNullAsDefault: true,
+    migrations: {
+      directory: path.resolve("db/migrations"),
+    },
+    seeds: {
+      directory: path.resolve("db/seeds"),
+    },
+  },
 };

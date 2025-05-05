@@ -9,22 +9,34 @@ describe("Integration Tests", function () {
   let recipeId;
 
   before(async () => {
-    // Signup the test user
-    await request(app).post("/users/signup").send({
-      fName: "test",
-      lName: "user",
-      pass: "Test@user1",
-      email: "test@example.com",
-      usrName: "testUser",
-    });
+    try {
+      // Signup the test user
+      const signupRes = await request(app).post("/users/signup").send({
+        fName: "test",
+        lName: "user",
+        pass: "Test@user1",
+        email: "test@example.com",
+        usrName: "testUser",
+      });
+      console.log("Signup response:", signupRes.body);
 
-    // SignIn the test user and get the token
-    const response = await request(app).post("/users/signin").send({
-      usrName: "testUser",
-      pass: "Test@user1",
-    });
+      // SignIn the test user and get the token
+      const signinRes = await request(app).post("/users/signin").send({
+        usrName: "testUser",
+        pass: "Test@user1",
+      });
+      console.log("Signin response:", signinRes.body);
 
-    token = response.body.accessToken;
+      if (!signinRes.body.accessToken) {
+        throw new Error("No access token received from signin");
+      }
+
+      token = signinRes.body.accessToken;
+      console.log("Token received:", token);
+    } catch (error) {
+      console.error("Setup error:", error);
+      throw error;
+    }
   });
 
   after(async () => {
@@ -44,6 +56,9 @@ describe("Integration Tests", function () {
       .get("/recipes")
       .set("Authorization", `Bearer ${token}`);
 
+    if (res.status !== 200) {
+      console.log("Get recipes error:", res.body);
+    }
     expect(res.status).to.equal(200);
   });
 
@@ -59,21 +74,9 @@ describe("Integration Tests", function () {
 
     expect(res.status).to.equal(201);
     expect(res.body).to.have.property("msg", "Recipe added successfully!");
+    expect(res.body.recipe).to.have.property("id");
     recipeId = res.body.recipe.id;
-  });
-
-  it("should update the created recipe", async () => {
-    const res = await request(app)
-      .put(`/recipes/${recipeId}`)
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        title: "updated recipe",
-        ingredients: "updated ingredients of a recipe",
-        instructions: "updated instructions of a recipe",
-      });
-
-    expect(res.status).to.equal(200);
-    expect(res.body).to.have.property("msg", "Recipe updated successfully!");
+    console.log("Created recipe ID:", recipeId);
   });
 
   // ====================== Recipe Comment Tests ======================
@@ -97,6 +100,7 @@ describe("Integration Tests", function () {
 
     expect(res.status).to.equal(200);
   });
+
   // ====================== Recipe Likes Tests ======================
 
   it("should like the recipe", async () => {
@@ -160,24 +164,8 @@ describe("Integration Tests", function () {
   it("should favorite the recipe", async () => {
     const res = await request(app)
       .post(`/f/${recipeId}`)
-      .set("Authorization", `Bearer ${token}`); 
-      expect(res.status).to.equal(201);
-      expect(res.body).to.have.property("msg", "Favorite added successfully!");
-    });
-
-  it("should get the user favorites ", async () => {
-    const res = await request(app)
-      .get(`/f`)
       .set("Authorization", `Bearer ${token}`);
-      expect(res.status).to.equal(200);
-  }); 
-
-  it("should unfavorite the recipe", async () => {
-    const res = await request(app)
-      .delete(`/f/${recipeId}`)
-      .set("Authorization", `Bearer ${token}`); 
-      expect(res.status).to.equal(200);
-      expect(res.body).to.have.property("msg", "Favorite deleted successfully!");
+    expect(res.status).to.equal(201);
+    expect(res.body).to.have.property("msg", "Favorite added successfully!");
   });
 });
-

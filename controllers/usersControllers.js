@@ -124,11 +124,16 @@ export const getUser = async (req, res) => {
 };
 
 export const getCurrentUserByUsername = async (username) => {
-  const currentUser = await db.raw("SELECT * FROM users WHERE username = ?", [
-    username,
-  ]);
-  console.log("currUser", currentUser);
-  return currentUser[0];
+  try {
+    const user = await db.select('*').from('users').where({ username }).first();
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return user;
+  } catch (error) {
+    console.error('Error getting user:', error);
+    throw error;
+  }
 };
 
 export const forgetPassword = async (req, res, next) => {
