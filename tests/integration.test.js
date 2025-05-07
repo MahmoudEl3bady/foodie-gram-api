@@ -168,4 +168,15 @@ describe("Integration Tests", function () {
     expect(res.status).to.equal(201);
     expect(res.body).to.have.property("msg", "Favorite added successfully!");
   });
+  it("should get the list of favorite recipes", async () => {
+    const res = await request(app)
+      .get("/f")
+      .set("Authorization", `Bearer ${token}`);
+    expect(res.status).to.equal(200);
+  });
+  it("should get the health check", async () => {
+    const res = await request(app).get("/healthz");
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property("msg", "Hello World");
+  });
 });
